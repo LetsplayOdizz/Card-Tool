@@ -1,62 +1,3 @@
-/*#include "opencv.hpp"
-#include <iostream>
-
-using namespace cv;
-using namespace std;
-
-int main()
-{
-	mat[8] bgs;
-	
-	mat[4] icos;
-	
-	mat[8] rnums;
-	
-	mat[8] bnums;
-	
-	result[32] cards;
-	
-	for(int i = 0; i < 8; i++)
-	{
-		bgs[i] = imread("images/bgs/"+to_string(i)+".png");
-	}
-	
-	for(int i = 0; i < 4; i++)
-	{
-		icos[i] = imread("images/icos/"+to_string(i)+".png");
-	}
-	
-	for (int i = 0; i < 8; i++)
-	{
-		rnums[i] = imread("images/rnums/"+to_string(i)+".png");
-	}
-	for (int i = 0; i < 8; i++)
-	{
-		bnums[i] = imread("images/bnums/"+to_string(i)+".png");
-	}
-
-	for(i = 0; i<4; i++)
-	{
-		for(elisus = 0; elisus < 8; elisus++)
-		{
-			if(i < 3)
-			{
-				addWeighted(bgs[elisus], 1.0, icos[i], 1.0, cards[i * elisus]);
-				addWeighted(cards[i * elisus], 1.0, rnums[elisus],1.0,card[i * elisus]);
-				
-				imwrite("Output/"+"Card_"+to_String(i)+"-"+to_string(elisus)+"_red");
-			}
-			else if(i > 2)
-			{
-				addWeighted(bgs[elisus], 1.0, icos[i], 1.0, cards[i * elisus]);
-				addWeighted(cards[i * elisus], 1.0, bnums[elisus],1.0,card[i * elisus]);
-				imwrite("Output/"+"Card_"+to_String(i)+"-"+to_string(elisus)+"_black");
-			}
-		}
-	}	
-	
-}
-*/
 #include "opencv2/opencv.hpp"
 #include <iostream>
 #include <string>
@@ -65,35 +6,78 @@ using namespace cv;
 using namespace std;
 
 int main() {
-    Mat bgs[8];
-    Mat icos[4];
-    Mat rnums[8];
-    Mat bnums[8];
+    Mat bgs[9];
+    Mat icos[5];
+    Mat rnums[9];
+    Mat bnums[9];
     Mat cards[32];
+	Mat overlay;
+	Mat alpha_icos;
 
-    for (int i = 0; i < 8; i++) {
-        bgs[i] = imread("images/bgs/" + to_string(i) + ".png");
+    // Load background images
+    for (int i = 1; i < 9; i++) {
+        bgs[i] = imread("images/bgs/" + to_string(i) + ".png", IMREAD_UNCHANGED);
     }
 
-    for (int i = 0; i < 4; i++) {
-        icos[i] = imread("images/icos/" + to_string(i) + ".png");
+    // Load overlay images
+    for (int i = 1; i < 5; i++) {
+        icos[i] = imread("images/icos/" + to_string(i) + ".png", IMREAD_UNCHANGED);
     }
 
-    for (int i = 0; i < 8; i++) {
-        rnums[i] = imread("images/rnums/" + to_string(i) + ".png");
-        bnums[i] = imread("images/bnums/" + to_string(i) + ".png");
+    for (int i = 1; i < 9; i++) {
+        rnums[i] = imread("images/rnums/" + to_string(i) + ".png", IMREAD_UNCHANGED);
+        bnums[i] = imread("images/bnums/" + to_string(i) + ".png", IMREAD_UNCHANGED);
     }
 
-    for (int i = 0; i < 4; i++) {
-        for (int elisus = 0; elisus < 8; elisus++) {
+    // Overlay each background with corresponding overlay images
+    for (int elisus = 1; elisus < 9; elisus++) {
+        for (int i = 1; i < 5; i++) {
             if (i < 3) {
-                addWeighted(bgs[elisus], 1.0, icos[i], 1.0, 0.0, cards[i * 8 + elisus]);
-                addWeighted(cards[i * 8 + elisus], 1.0, rnums[elisus], 1.0, 0.0, cards[i * 8 + elisus]);
-                imwrite("Output/Card_" + to_string(i) + "-" + to_string(elisus) + "_red.png", cards[i * 8 + elisus]);
+                overlay = icos[i].clone();
+                alpha_icos = overlay.clone();
+                vector<Mat> channels_icos;
+                split(alpha_icos, channels_icos);
+                alpha_icos = channels_icos[3];
+
+                // Copy only non-transparent pixels from overlay to background
+                overlay.copyTo(bgs[elisus](Rect(0, 0, overlay.cols, overlay.rows)), alpha_icos);
+
+                Mat overlay_rnums = rnums[elisus].clone();
+                Mat alpha_rnums = overlay_rnums.clone();
+                vector<Mat> channels_rnums;
+                split(alpha_rnums, channels_rnums);
+                alpha_rnums = channels_rnums[3];
+
+                // Copy only non-transparent pixels from overlay to background
+                overlay_rnums.copyTo(bgs[elisus](Rect(0, 0, overlay_rnums.cols, overlay_rnums.rows)), alpha_rnums);
+
+                imwrite("Output/Card_" + to_string(i) + "-" + to_string(elisus) + ".png", bgs[elisus]);
+				for (int i = 1; i < 9; i++) {
+       				bgs[i] = imread("images/bgs/" + to_string(i) + ".png", IMREAD_UNCHANGED);
+    			}
             } else {
-                addWeighted(bgs[elisus], 1.0, icos[i], 1.0, 0.0, cards[i * 8 + elisus]);
-                addWeighted(cards[i * 8 + elisus], 1.0, bnums[elisus], 1.0, 0.0, cards[i * 8 + elisus]);
-                imwrite("Output/Card_" + to_string(i) + "-" + to_string(elisus) + "_black.png", cards[i * 8 + elisus]);
+                overlay = icos[i].clone();
+                alpha_icos = overlay.clone();
+                vector<Mat> channels_icos;
+                split(alpha_icos, channels_icos);
+                alpha_icos = channels_icos[3];
+
+                // Copy only non-transparent pixels from overlay to background
+                overlay.copyTo(bgs[elisus](Rect(0, 0, overlay.cols, overlay.rows)), alpha_icos);
+
+                Mat overlay_bnums = bnums[elisus].clone();
+                Mat alpha_bnums = overlay_bnums.clone();
+                vector<Mat> channels_bnums;
+                split(alpha_bnums, channels_bnums);
+                alpha_bnums = channels_bnums[3];
+
+                // Copy only non-transparent pixels from overlay to background
+                overlay_bnums.copyTo(bgs[elisus](Rect(0, 0, overlay_bnums.cols, overlay_bnums.rows)), alpha_bnums);
+
+                imwrite("Output/Card_" + to_string(i) + "-" + to_string(elisus) + ".png", bgs[elisus]);
+				for (int i = 1; i < 9; i++) {
+       				bgs[i] = imread("images/bgs/" + to_string(i) + ".png", IMREAD_UNCHANGED);
+   				}
             }
         }
     }
